@@ -32,27 +32,26 @@ def main():
         print("The Excel file is empty.")
         return
 
-    # Ensure the "sent status" column exists
+    # Ensure the needed columns exist
     if "sent status" not in df.columns:
         df["sent status"] = ""
+    if "status message" not in df.columns:
+        df["status message"] = ""
 
     print("Initializing browser...")
     driver = setup_driver()
 
     try:
-        # Loop through every row in the DataFrame
         for index, row in df.iterrows():
             profile_name = row.get("Profile Name", "Unknown")
             target_url = row.get("Profile URL", "N/A")
             
-            # Safely get the current status and convert to lowercase for checking
             raw_status = row.get("sent status", "")
             if pd.isna(raw_status):
                 status_clean = ""
             else:
                 status_clean = str(raw_status).strip().lower()
 
-            # Skip if already marked as success OR failed in a previous run
             if status_clean in ["success", "failed"]:
                 print(f"Skipping {profile_name} - already processed with status: '{raw_status}'.")
                 continue
@@ -65,11 +64,9 @@ def main():
             print(f"Navigating to: {target_url}")
             driver.get(target_url)
 
-            # Wait a few seconds for the page to load fully
             initial_wait = random.uniform(5, 8)
             time.sleep(initial_wait)
 
-            # Check for and reject cookies on EVERY loop iteration
             print("Checking for 'Reject All' cookie button...")
             try:
                 reject_button = WebDriverWait(driver, 5).until(
@@ -78,7 +75,7 @@ def main():
                 driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", reject_button)
                 reject_button.click()
                 print("Successfully clicked 'Reject All'.")
-                time.sleep(2)  # Give the banner time to disappear
+                time.sleep(2)  
             except Exception:
                 print("'Reject All' button not found on this page. Continuing...")
 
@@ -95,27 +92,34 @@ def main():
                 contact_button.click()
                 print("Successfully clicked 'Contact partner'.")
 
-                # Give the form a moment to slide/pop up
                 time.sleep(2)
                 
-                # Execute the form filling logic and capture the result
-                status = fill_contact_form(driver)
+                # Execute form filling logic - unpack both returned values
+                status, status_msg = fill_contact_form(driver)
 
-                # Record the result into the DataFrame
+                # TRIGGER STOP EXECUTION IF REQUIRED
+                if status == "stop_execution":
+                    print(f"\n[HALTED] Script stopped at Row {index + 1} due to missing 'Close' button.")
+                    break
+
+                # Save both status and the extracted message to the dataframe
                 df.at[index, "sent status"] = status
-                print(f"Recorded status: {status}")
+                if status_msg:
+                    df.at[index, "status message"] = status_msg
+                    
+                print(f"Recorded status: {status} | Message: {status_msg}")
 
             except Exception as e:
                 print(f"Could not interact with profile {profile_name}: {e}")
                 df.at[index, "sent status"] = "failed"
 
-            # Save progress to Excel immediately after processing each profile
+            # Save progress to Excel immediately
             df.to_excel(excel_filename, index=False)
             print(f"Saved progress to '{excel_filename}'.")
 
     finally:
-        driver.quit()
-        print("\nBrowser closed. Automation finished.")
+        # If the script stopped execution due to an error, we keep the browser open for inspection
+        print("\nAutomation loop finished. You may safely close the terminal/browser.")
 
 
 if __name__ == "__main__":
