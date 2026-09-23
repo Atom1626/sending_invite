@@ -5,7 +5,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 def fill_contact_form(driver):
-    """Fills out the contact form by safely piercing shadow DOMs for custom dropdowns."""
+    """Fills out the contact form, handles dropdowns, reCAPTCHA, and verifies final success."""
+
 
     # --- DEFINE YOUR DETAILS HERE ---
     details = {
@@ -46,14 +47,12 @@ Globalwave Softech""",
     }
     # --------------------------------
 
-
     wait = WebDriverWait(driver, 15)
 
     try:
         print("Filling out contact form details...")
-        time.sleep(2)  # Allow the modal to fully render
+        time.sleep(2)  
 
-        # Helper for standard text inputs (First name, Last name, etc.)
         def set_text_field(name_attr, value):
             try:
                 element = wait.until(
@@ -76,10 +75,9 @@ Globalwave Softech""",
         set_text_field("phone", details["phone"])
         set_text_field("company", details["company"])
 
-# 6. Country Selection 
+        # 6. Country Selection 
         print("Selecting country...")
         try:
-            # Open the dropdown
             driver.execute_script("""
                 const host = document.querySelector('udex-country-selector[name="country"]');
                 if (host && host.shadowRoot) {
@@ -87,25 +85,19 @@ Globalwave Softech""",
                     if (trigger) trigger.click();
                 }
             """)
-            time.sleep(1) # Wait for dropdown animation
+            time.sleep(1)
 
-            # Target the exact item and click its inner shadow element
             driver.execute_script("""
                 const host = document.querySelector('udex-country-selector[name="country"]');
                 if (host && host.shadowRoot) {
-                    // Find India using its unique ID "IN"
                     const item = host.shadowRoot.querySelector('udex-list-item#IN') || 
                                  host.shadowRoot.querySelector('udex-list-item[label*="India"]');
                     
                     if (item) {
-                        // Scroll the dropdown down to India so it is interactable
                         item.scrollIntoView({block: 'center'});
-                        
-                        // Trigger standard clicks
                         item.click();
                         item.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
                         
-                        // CRITICAL FIX: Pierce the item's own shadow DOM to click the actual hidden list tag
                         if (item.shadowRoot) {
                             const innerItem = item.shadowRoot.querySelector('li') || item.shadowRoot.firstElementChild;
                             if (innerItem) innerItem.click();
@@ -116,11 +108,9 @@ Globalwave Softech""",
         except Exception as e:
             print(f"Error selecting country: {e}")
 
-
-# 7. Relationship Selection
+        # 7. Relationship Selection
         print("Selecting relationship...")
         try:
-            # Open the dropdown
             driver.execute_script("""
                 const host = document.querySelector('udex-select-box[name="relationship"]');
                 if (host && host.shadowRoot) {
@@ -130,21 +120,16 @@ Globalwave Softech""",
             """)
             time.sleep(1)
 
-            # Target the exact item (udex-list-item) inside the shadow DOM
             driver.execute_script("""
                 const host = document.querySelector('udex-select-box[name="relationship"]');
                 if (host && host.shadowRoot) {
-                    // Using the correct tag name found in the live DOM
                     const item = host.shadowRoot.querySelector('udex-list-item[label="Prospective Customer"]');
                     
                     if (item) {
                         item.scrollIntoView({block: 'center'});
-                        
-                        // Trigger standard clicks
                         item.click();
                         item.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
                         
-                        // Pierce the item's own shadow DOM just like the country field
                         if (item.shadowRoot) {
                             const innerItem = item.shadowRoot.querySelector('li') || item.shadowRoot.firstElementChild;
                             if (innerItem) innerItem.click();
@@ -171,32 +156,21 @@ Globalwave Softech""",
         except Exception as ex:
             print(f"Warning: Could not fill message field: {ex}")
 
-        print("Successfully processed all form fields.")
-
-# 9. Agreement Checkbox
+        # 9. Agreement Checkbox
         print("Clicking agreement checkbox...")
         try:
-            # We use a script to find the checkbox, handling both Light and Shadow DOM possibilities
             driver.execute_script("""
-                // Try finding the custom element tag first
                 let checkboxHost = document.querySelector('udex-checkbox') || document.querySelector('ui5-checkbox');
-                
                 if (checkboxHost) {
                     checkboxHost.scrollIntoView({block: 'center'});
-                    
-                    // Click the host component
                     checkboxHost.click();
                     checkboxHost.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
                     
-                    // Also pierce the shadow DOM to click the inner box specifically
                     if (checkboxHost.shadowRoot) {
                         const innerBox = checkboxHost.shadowRoot.querySelector('.ui5-checkbox-inner');
-                        if (innerBox) {
-                            innerBox.click();
-                        }
+                        if (innerBox) innerBox.click();
                     }
                 } else {
-                    // Fallback if the inner checkbox class is just sitting in the normal DOM
                     let innerDom = document.querySelector('.ui5-checkbox-inner');
                     if (innerDom) {
                         innerDom.scrollIntoView({block: 'center'});
@@ -208,72 +182,142 @@ Globalwave Softech""",
         except Exception as e:
             print(f"Error clicking agreement checkbox: {e}")
 
-        print("Successfully processed all form fields.")
-
- # 10. Click reCAPTCHA Checkbox
+# 10. Click reCAPTCHA Checkbox and wait for verification
         print("Handling reCAPTCHA...")
         try:
-            # Wait for the reCAPTCHA iframe to appear and switch driver focus to it
             recaptcha_iframe = wait.until(
                 EC.presence_of_element_located((By.XPATH, '//iframe[contains(@src, "recaptcha")]'))
             )
             driver.switch_to.frame(recaptcha_iframe)
             
-            # Now wait for the checkbox inside the iframe and click it
             recaptcha_checkbox = wait.until(
                 EC.element_to_be_clickable((By.ID, "recaptcha-anchor"))
             )
             driver.execute_script("arguments[0].scrollIntoView({block:'center'});", recaptcha_checkbox)
-            time.sleep(0.5)  # Brief pause to look slightly more human
+            time.sleep(1) 
             recaptcha_checkbox.click()
-            print("Successfully clicked the reCAPTCHA checkbox.")
             
-            # Switch back to the main page content so the script can continue normally
+            # Wait for the green checkmark (aria-checked becomes "true")
+            print("Waiting for reCAPTCHA verification...")
+            verified = False
+            start_time = time.time()
+            
+            # Give yourself up to 60 seconds to solve the picture puzzle if it appears
+            while time.time() - start_time < 60:
+                is_checked = recaptcha_checkbox.get_attribute("aria-checked")
+                if is_checked == "true":
+                    verified = True
+                    print("reCAPTCHA verified successfully!")
+                    break
+                
+                # If it's not checked yet, print a reminder every 10 seconds
+                if int(time.time() - start_time) % 10 == 0:
+                    print("Please solve the image puzzle on the screen...")
+                
+                time.sleep(1)
+            
             driver.switch_to.default_content()
-            time.sleep(2)  # Give the reCAPTCHA a moment to process the click
+            time.sleep(2) 
+            
+            if not verified:
+                print("Failed: reCAPTCHA was not solved within 60 seconds.")
+                return "failed"
             
         except Exception as e:
             print(f"Error handling reCAPTCHA: {e}")
-            # Ensure we switch back to the main page even if it fails
             driver.switch_to.default_content()
+            return "failed"
 
-        print("Successfully processed all form fields.")
-        # 11. Click Send Button
-        print("Clicking Send button...")
-        try:
-            driver.execute_script("""
-                // Look for a custom udex-button or ui5-button that contains 'Send'
+        # 11. Click Send Button (With strict verification!)
+        print("Waiting for Send button to become enabled and clicking it...")
+        send_start_time = time.time()
+        clicked_send = False
+        
+        while time.time() - send_start_time < 15:  # Wait up to 15 seconds for button to enable
+            js_result = driver.execute_script("""
                 let sendBtnHost = Array.from(document.querySelectorAll('udex-button, ui5-button')).find(
                     btn => (btn.textContent && btn.textContent.trim() === 'Send') || 
-                           btn.getAttribute('aria-label') === 'Send'
+                           btn.getAttribute('aria-label') === 'Send' ||
+                           btn.classList.contains('lead-form-modal__submit')
                 );
                 
                 if (sendBtnHost) {
+                    // Check if the button is locked/disabled
+                    if (sendBtnHost.disabled || sendBtnHost.hasAttribute('disabled') && sendBtnHost.getAttribute('disabled') !== 'false') {
+                        return "disabled";
+                    }
+                    
                     sendBtnHost.scrollIntoView({block: 'center'});
-                    // Click the host component
+                    
+                    // Click it if it's enabled
                     sendBtnHost.click();
                     
-                    // Pierce the shadow root to click the inner button just in case
                     if (sendBtnHost.shadowRoot) {
                         let innerBtn = sendBtnHost.shadowRoot.querySelector('button');
-                        if (innerBtn) innerBtn.click();
+                        if (innerBtn) {
+                            innerBtn.click();
+                        }
                     }
-                } else {
-                    // Fallback to finding the exact aria-label button directly
-                    let directBtn = document.querySelector('button[aria-label="Send"]');
-                    if (directBtn) {
-                        directBtn.scrollIntoView({block: 'center'});
-                        directBtn.click();
+                    return "clicked";
+                }
+                return "not_found";
+            """)
+            
+            if js_result == "clicked":
+                clicked_send = True
+                print("Successfully verified and clicked the Send button.")
+                break
+            elif js_result == "disabled":
+                print("Send button is still disabled (waiting for form/reCAPTCHA validation)...")
+            
+            time.sleep(1.5)
+            
+        if not clicked_send:
+            print("Failed: Send button never became enabled or was not found.")
+            return "failed"
+
+        # 12. Wait for Success Popup and explicitly hunt for "Close"
+        print("Waiting for success confirmation popup (ignoring intermediate loading screens)...")
+        start_time = time.time()
+        success = False
+        
+        while time.time() - start_time < 30: 
+            result = driver.execute_script("""
+                let popup = document.querySelector('.ui5-popup-root[role="dialog"]');
+                if (popup) {
+                    let buttons = Array.from(popup.querySelectorAll('udex-button, ui5-button'));
+                    let closeBtn = buttons.find(b => {
+                        let text = (b.textContent || b.getAttribute('aria-label') || '').toLowerCase();
+                        return text.includes('close') || text.includes('ok');
+                    });
+                    
+                    if (closeBtn) {
+                        closeBtn.scrollIntoView({block: 'center'});
+                        closeBtn.click();
+                        
+                        if (closeBtn.shadowRoot) {
+                            let innerBtn = closeBtn.shadowRoot.querySelector('button');
+                            if (innerBtn) innerBtn.click();
+                        }
+                        return true;
                     }
                 }
+                return false;
             """)
-            print("Successfully clicked the Send button.")
-        except Exception as e:
-            print(f"Error clicking Send button: {e}")
+            
+            if result:
+                success = True
+                print("Final success popup detected and closed successfully!")
+                break
+                
+            time.sleep(1.5)
 
-        print("Successfully processed the entire form.")
-        return True
+        if success:
+            return "success"
+        else:
+            print("Final success popup with a 'Close' button did not appear within 30 seconds.")
+            return "failed"
 
     except Exception as e:
         print(f"An error occurred while filling the form: {e}")
-        return False
+        return "failed"
