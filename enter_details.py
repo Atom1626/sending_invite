@@ -209,7 +209,7 @@ Globalwave Softech""",
             print(f"Error clicking agreement checkbox: {e}")
 
         print("Successfully processed all form fields.")
-        
+
  # 10. Click reCAPTCHA Checkbox
         print("Handling reCAPTCHA...")
         try:
@@ -238,6 +238,40 @@ Globalwave Softech""",
             driver.switch_to.default_content()
 
         print("Successfully processed all form fields.")
+        # 11. Click Send Button
+        print("Clicking Send button...")
+        try:
+            driver.execute_script("""
+                // Look for a custom udex-button or ui5-button that contains 'Send'
+                let sendBtnHost = Array.from(document.querySelectorAll('udex-button, ui5-button')).find(
+                    btn => (btn.textContent && btn.textContent.trim() === 'Send') || 
+                           btn.getAttribute('aria-label') === 'Send'
+                );
+                
+                if (sendBtnHost) {
+                    sendBtnHost.scrollIntoView({block: 'center'});
+                    // Click the host component
+                    sendBtnHost.click();
+                    
+                    // Pierce the shadow root to click the inner button just in case
+                    if (sendBtnHost.shadowRoot) {
+                        let innerBtn = sendBtnHost.shadowRoot.querySelector('button');
+                        if (innerBtn) innerBtn.click();
+                    }
+                } else {
+                    // Fallback to finding the exact aria-label button directly
+                    let directBtn = document.querySelector('button[aria-label="Send"]');
+                    if (directBtn) {
+                        directBtn.scrollIntoView({block: 'center'});
+                        directBtn.click();
+                    }
+                }
+            """)
+            print("Successfully clicked the Send button.")
+        except Exception as e:
+            print(f"Error clicking Send button: {e}")
+
+        print("Successfully processed the entire form.")
         return True
 
     except Exception as e:
