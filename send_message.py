@@ -1,11 +1,26 @@
 import random
 import time
+import re
 import pandas as pd
 import undetected_chromedriver as uc
 from enter_details import fill_contact_form
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+
+
+def clean_company_name(name):
+    """Cleans company name by removing 'Profile Card:' prefix, all spaces, and lowercasing."""
+    if pd.isna(name):
+        return ""
+    
+    name_str = str(name).strip()
+    # Remove 'Profile Card:' prefix (case-insensitive)
+    name_str = re.sub(r'(?i)^profile\s*card\s*:\s*', '', name_str)
+    # Remove all whitespace and convert to lowercase
+    name_str = re.sub(r'\s+', '', name_str).lower()
+    
+    return name_str
 
 
 def setup_driver():
@@ -20,16 +35,35 @@ def setup_driver():
 
 def main():
     excel_filename = "profile_cards_pages_158_to_159.xlsx"
+    client_excel_filename = "ClientNames.xlsx"
 
+    # --- 1. Load Existing Client Data ---
+    existing_clients = set()
     try:
-        print(f"Loading data from '{excel_filename}'...")
+        print(f"Loading client list from '{client_excel_filename}'...")
+        client_df = pd.read_excel(client_excel_filename)
+        
+        if "Client Names" in client_df.columns:
+            # Clean each client name and store in a Set for super-fast lookups
+            raw_clients = client_df["Client Names"].tolist()
+            existing_clients = {clean_company_name(name) for name in raw_clients if str(name).strip()}
+            print(f"Loaded {len(existing_clients)} unique existing clients for comparison.")
+        else:
+            print(f"Warning: 'Client Names' column not found in '{client_excel_filename}'. Skipping client check.")
+    except FileNotFoundError:
+        print(f"Warning: '{client_excel_filename}' not found. Skipping existing client check.")
+
+
+    # --- 2. Load Target Profiles Data ---
+    try:
+        print(f"Loading target profiles from '{excel_filename}'...")
         df = pd.read_excel(excel_filename)
     except FileNotFoundError:
         print(f"Error: '{excel_filename}' not found.")
         return
 
     if df.empty:
-        print("The Excel file is empty.")
+        print("The target Excel file is empty.")
         return
 
     # Ensure the needed columns exist
@@ -52,14 +86,26 @@ def main():
             else:
                 status_clean = str(raw_status).strip().lower()
 
-            if status_clean in ["success", "failed"]:
+            # A. Skip if already processed in a previous run
+            if status_clean in ["success", "failed", "already our client"]:
                 print(f"Skipping {profile_name} - already processed with status: '{raw_status}'.")
                 continue
 
+            # B. Check if they are an existing client
+            cleaned_profile = clean_company_name(profile_name)
+            if cleaned_profile in existing_clients:
+                print(f"Skipping {profile_name} - MATCHED existing client in '{client_excel_filename}'.")
+                df.at[index, "sent status"] = "already our client"
+                df.at[index, "status message"] = "Skipped: Client match found"
+                df.to_excel(excel_filename, index=False)
+                continue
+
+            # C. Check if URL is missing
             if target_url == "N/A" or pd.isna(target_url):
                 print(f"Skipping row {index + 1}: No valid URL.")
                 continue
 
+            # --- Proceed with Automation ---
             print(f"\n--- Processing Row {index + 1}: {profile_name} ---")
             print(f"Navigating to: {target_url}")
             driver.get(target_url)
