@@ -182,7 +182,7 @@ Globalwave Softech""",
         except Exception as e:
             print(f"Error clicking agreement checkbox: {e}")
 
-# 10. Click reCAPTCHA Checkbox and wait for verification
+        # 10. Click reCAPTCHA Checkbox
         print("Handling reCAPTCHA...")
         try:
             recaptcha_iframe = wait.until(
@@ -197,12 +197,11 @@ Globalwave Softech""",
             time.sleep(1) 
             recaptcha_checkbox.click()
             
-            # Wait for the green checkmark (aria-checked becomes "true")
+            # Wait for green checkmark (aria-checked becomes "true")
             print("Waiting for reCAPTCHA verification...")
             verified = False
             start_time = time.time()
             
-            # Give yourself up to 60 seconds to solve the picture puzzle if it appears
             while time.time() - start_time < 60:
                 is_checked = recaptcha_checkbox.get_attribute("aria-checked")
                 if is_checked == "true":
@@ -210,7 +209,6 @@ Globalwave Softech""",
                     print("reCAPTCHA verified successfully!")
                     break
                 
-                # If it's not checked yet, print a reminder every 10 seconds
                 if int(time.time() - start_time) % 10 == 0:
                     print("Please solve the image puzzle on the screen...")
                 
@@ -221,19 +219,19 @@ Globalwave Softech""",
             
             if not verified:
                 print("Failed: reCAPTCHA was not solved within 60 seconds.")
-                return "failed"
+                return "failed", ""
             
         except Exception as e:
             print(f"Error handling reCAPTCHA: {e}")
             driver.switch_to.default_content()
-            return "failed"
+            return "failed", ""
 
-        # 11. Click Send Button (With strict verification!)
+        # 11. Click Send Button
         print("Waiting for Send button to become enabled and clicking it...")
         send_start_time = time.time()
         clicked_send = False
         
-        while time.time() - send_start_time < 15:  # Wait up to 15 seconds for button to enable
+        while time.time() - send_start_time < 15: 
             js_result = driver.execute_script("""
                 let sendBtnHost = Array.from(document.querySelectorAll('udex-button, ui5-button')).find(
                     btn => (btn.textContent && btn.textContent.trim() === 'Send') || 
@@ -242,21 +240,15 @@ Globalwave Softech""",
                 );
                 
                 if (sendBtnHost) {
-                    // Check if the button is locked/disabled
                     if (sendBtnHost.disabled || sendBtnHost.hasAttribute('disabled') && sendBtnHost.getAttribute('disabled') !== 'false') {
                         return "disabled";
                     }
-                    
                     sendBtnHost.scrollIntoView({block: 'center'});
-                    
-                    // Click it if it's enabled
                     sendBtnHost.click();
                     
                     if (sendBtnHost.shadowRoot) {
                         let innerBtn = sendBtnHost.shadowRoot.querySelector('button');
-                        if (innerBtn) {
-                            innerBtn.click();
-                        }
+                        if (innerBtn) innerBtn.click();
                     }
                     return "clicked";
                 }
@@ -274,23 +266,46 @@ Globalwave Softech""",
             
         if not clicked_send:
             print("Failed: Send button never became enabled or was not found.")
-            return "failed"
+            return "failed", ""
 
-        # 12. Wait for Success Popup and explicitly hunt for "Close"
-        print("Waiting for success confirmation popup (ignoring intermediate loading screens)...")
+        # 12. Explicitly wait for "Contact Request Sent", grab message, WAIT 10 SECONDS, then click Close
+        print("Waiting for 'Contact Request Sent' message...")
         start_time = time.time()
-        success = False
         
         while time.time() - start_time < 30: 
-            result = driver.execute_script("""
-                let popup = document.querySelector('.ui5-popup-root[role="dialog"]');
-                if (popup) {
-                    let buttons = Array.from(popup.querySelectorAll('udex-button, ui5-button'));
-                    let closeBtn = buttons.find(b => {
-                        let text = (b.textContent || b.getAttribute('aria-label') || '').toLowerCase();
-                        return text.includes('close') || text.includes('ok');
-                    });
+            # We now return a dictionary with the status and the extracted message
+            js_result = driver.execute_script("""
+                let successTitle = document.querySelector('.lead-form-modal__indicator-title');
+                let successSubtitle = document.querySelector('.lead-form-modal__indicator-subtitle');
+                let isSuccess = successTitle && successTitle.textContent.includes('Contact Request Sent');
+                
+                if (isSuccess) {
+                    let closeBtn = Array.from(document.querySelectorAll('udex-button, ui5-button')).find(
+                        b => b.textContent && b.textContent.trim() === 'Close'
+                    );
                     
+                    if (closeBtn) {
+                        let msg = successSubtitle ? successSubtitle.textContent.trim() : "Request submitted successfully.";
+                        return { "status": "ready_to_close", "message": msg };
+                    }
+                    return { "status": "success_but_no_close", "message": "" };
+                }
+                return { "status": "waiting", "message": "" };
+            """)
+            
+            js_status = js_result.get("status")
+            js_message = js_result.get("message")
+            
+            if js_status == "ready_to_close":
+                print(f"Success message detected: '{js_message}'")
+                print("Waiting 10 seconds before clicking Close...")
+                time.sleep(10)  # Waiting 10 seconds BEFORE clicking close
+                
+                # Now actually click the Close button
+                driver.execute_script("""
+                    let closeBtn = Array.from(document.querySelectorAll('udex-button, ui5-button')).find(
+                        b => b.textContent && b.textContent.trim() === 'Close'
+                    );
                     if (closeBtn) {
                         closeBtn.scrollIntoView({block: 'center'});
                         closeBtn.click();
@@ -299,25 +314,20 @@ Globalwave Softech""",
                             let innerBtn = closeBtn.shadowRoot.querySelector('button');
                             if (innerBtn) innerBtn.click();
                         }
-                        return true;
                     }
-                }
-                return false;
-            """)
-            
-            if result:
-                success = True
-                print("Final success popup detected and closed successfully!")
-                break
+                """)
+                print("'Close' button clicked!")
+                return "success", js_message
                 
+            elif js_status == "success_but_no_close":
+                print("Found success text, but no Close button yet. Retrying...")
+            
             time.sleep(1.5)
 
-        if success:
-            return "success"
-        else:
-            print("Final success popup with a 'Close' button did not appear within 30 seconds.")
-            return "failed"
+        # If it reaches here, the 30 seconds expired without successfully closing the window
+        print("\n[FATAL ERROR] 'Close' button or success message not found within 30 seconds.")
+        return "stop_execution", ""
 
     except Exception as e:
         print(f"An error occurred while filling the form: {e}")
-        return "failed"
+        return "failed", ""
