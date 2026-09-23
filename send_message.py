@@ -19,95 +19,103 @@ def setup_driver():
 
 
 def main():
-    # Step 1: Load the Excel file containing the saved profiles
     excel_filename = "profile_cards_pages_158_to_159.xlsx"
 
     try:
         print(f"Loading data from '{excel_filename}'...")
         df = pd.read_excel(excel_filename)
     except FileNotFoundError:
-        print(
-            f"Error: '{excel_filename}' not found. Please make sure it's in the same directory."
-        )
+        print(f"Error: '{excel_filename}' not found.")
         return
 
     if df.empty:
         print("The Excel file is empty.")
         return
 
-    # Get the first row's data as a test
-    first_row = df.iloc[0]
-    profile_name = first_row.get("Profile Name", "Unknown")
-    target_url = first_row.get("Profile URL", "N/A")
+    # Ensure the "sent status" column exists
+    if "sent status" not in df.columns:
+        df["sent status"] = ""
 
-    if target_url == "N/A" or not target_url:
-        print("Error: The first row does not contain a valid profile URL.")
-        return
-
-    # Step 2: Initialize the browser
     print("Initializing browser...")
     driver = setup_driver()
 
     try:
-        # Step 3: Open the first profile URL
-        print(f"\nOpening first profile for: {profile_name}")
-        print(f"Navigating to: {target_url}")
-        driver.get(target_url)
+        # Loop through every row in the DataFrame
+        for index, row in df.iterrows():
+            profile_name = row.get("Profile Name", "Unknown")
+            target_url = row.get("Profile URL", "N/A")
+            
+            # Safely get the current status and convert to lowercase for checking
+            raw_status = row.get("sent status", "")
+            if pd.isna(raw_status):
+                status_clean = ""
+            else:
+                status_clean = str(raw_status).strip().lower()
 
-        # Step 4: Wait for 5 to 10 seconds after opening the page
-        initial_wait = random.uniform(5, 10)
-        print(
-            f"Waiting for {initial_wait:.2f} seconds after opening the page..."
-        )
-        time.sleep(initial_wait)
+            # Skip if already marked as success OR failed in a previous run
+            if status_clean in ["success", "failed"]:
+                print(f"Skipping {profile_name} - already processed with status: '{raw_status}'.")
+                continue
 
-        # Step 5: Check for and click the "Reject All" button if present
-        print("Checking for 'Reject All' cookie button...")
-        try:
-            reject_button = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable(
-                    (By.ID, "truste-consent-required")
+            if target_url == "N/A" or pd.isna(target_url):
+                print(f"Skipping row {index + 1}: No valid URL.")
+                continue
+
+            print(f"\n--- Processing Row {index + 1}: {profile_name} ---")
+            print(f"Navigating to: {target_url}")
+            driver.get(target_url)
+
+            # Wait a few seconds for the page to load fully
+            initial_wait = random.uniform(5, 8)
+            time.sleep(initial_wait)
+
+            # Check for and reject cookies on EVERY loop iteration
+            print("Checking for 'Reject All' cookie button...")
+            try:
+                reject_button = WebDriverWait(driver, 5).until(
+                    EC.element_to_be_clickable((By.ID, "truste-consent-required"))
                 )
-            )
-            reject_button.click()
-            print("Successfully clicked 'Reject All'.")
-        except Exception:
-            print("'Reject All' button not found. Continuing...")
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", reject_button)
+                reject_button.click()
+                print("Successfully clicked 'Reject All'.")
+                time.sleep(2)  # Give the banner time to disappear
+            except Exception:
+                print("'Reject All' button not found on this page. Continuing...")
 
-        # Step 6: Wait for another 5 to 10 seconds
-        second_wait = random.uniform(5, 10)
-        print(f"Waiting for another {second_wait:.2f} seconds...")
-        time.sleep(second_wait)
+            time.sleep(random.uniform(2, 4))
 
-        # Step 7: Click the "Contact partner" button
-        print("Looking for 'Contact partner' button...")
-        contact_button_xpath = (
-            '//udex-button[contains(., "Contact partner")]'
-        )
+            print("Looking for 'Contact partner' button...")
+            contact_button_xpath = '//udex-button[contains(., "Contact partner")]'
 
-        try:
-            contact_button = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, contact_button_xpath))
-            )
-            contact_button.click()
-            print("Successfully clicked 'Contact partner'.")
+            try:
+                contact_button = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, contact_button_xpath))
+                )
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", contact_button)
+                contact_button.click()
+                print("Successfully clicked 'Contact partner'.")
 
-            # Step 8: Call the form filler function from enter_details.py
-            time.sleep(2)  # Short pause for the form container to slide/pop up
-            fill_contact_form(driver)
+                # Give the form a moment to slide/pop up
+                time.sleep(2)
+                
+                # Execute the form filling logic and capture the result
+                status = fill_contact_form(driver)
 
-        except Exception as e:
-            print(f"Could not find or click 'Contact partner' button: {e}")
+                # Record the result into the DataFrame
+                df.at[index, "sent status"] = status
+                print(f"Recorded status: {status}")
 
-        # Pause here so you can verify the filled form
-        print(
-            "\n[Paused] Form has been filled. Review it in the browser window."
-        )
-        input("Press Enter to close the browser...")
+            except Exception as e:
+                print(f"Could not interact with profile {profile_name}: {e}")
+                df.at[index, "sent status"] = "failed"
+
+            # Save progress to Excel immediately after processing each profile
+            df.to_excel(excel_filename, index=False)
+            print(f"Saved progress to '{excel_filename}'.")
 
     finally:
-        # Step 9: Clean up and close the browser
         driver.quit()
+        print("\nBrowser closed. Automation finished.")
 
 
 if __name__ == "__main__":
