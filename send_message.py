@@ -2,6 +2,7 @@ import random
 import time
 import pandas as pd
 import undetected_chromedriver as uc
+from enter_details import fill_contact_form
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,7 +13,7 @@ def setup_driver():
     options = uc.ChromeOptions()
     options.add_argument("--start-maximized")
 
-    # Explicitly matching your local Chrome version (131) to prevent freezing
+    # Match your local Chrome version (131)
     driver = uc.Chrome(options=options, version_main=131)
     return driver
 
@@ -90,17 +91,22 @@ def main():
             )
             contact_button.click()
             print("Successfully clicked 'Contact partner'.")
+
+            # Step 8: Call the form filler function from enter_details.py
+            time.sleep(2)  # Short pause for the form container to slide/pop up
+            fill_contact_form(driver)
+
         except Exception as e:
             print(f"Could not find or click 'Contact partner' button: {e}")
 
-        # Pause here so you can verify the result
+        # Pause here so you can verify the filled form
         print(
-            "\n[Paused] Action sequence completed. Tell me what to do next!"
+            "\n[Paused] Form has been filled. Review it in the browser window."
         )
         input("Press Enter to close the browser...")
 
     finally:
-        # Step 8: Clean up and close the browser
+        # Step 9: Clean up and close the browser
         driver.quit()
 
 
