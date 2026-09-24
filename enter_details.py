@@ -2,7 +2,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
+from helper_utils import random_wait
 
 def fill_contact_form(driver):
     """Fills out the contact form, handles dropdowns, reCAPTCHA, and verifies final success."""
@@ -51,7 +51,7 @@ Globalwave Softech""",
 
     try:
         print("Filling out contact form details...")
-        time.sleep(2)  
+        random_wait()  
 
         def set_text_field(name_attr, value):
             try:
@@ -70,10 +70,15 @@ Globalwave Softech""",
 
         # 1 to 5: Standard Fields
         set_text_field("firstName", details["firstName"])
+        random_wait()
         set_text_field("lastName", details["lastName"])
+        random_wait()
         set_text_field("email", details["email"])
+        random_wait()
         set_text_field("phone", details["phone"])
+        random_wait()
         set_text_field("company", details["company"])
+        random_wait()
 
         # 6. Country Selection 
         print("Selecting country...")
@@ -156,6 +161,7 @@ Globalwave Softech""",
         except Exception as ex:
             print(f"Warning: Could not fill message field: {ex}")
 
+        random_wait()
         # 9. Agreement Checkbox
         print("Clicking agreement checkbox...")
         try:
@@ -182,6 +188,7 @@ Globalwave Softech""",
         except Exception as e:
             print(f"Error clicking agreement checkbox: {e}")
 
+        random_wait()
         # 10. Click reCAPTCHA Checkbox
         print("Handling reCAPTCHA...")
         try:
@@ -215,7 +222,7 @@ Globalwave Softech""",
                 time.sleep(1)
             
             driver.switch_to.default_content()
-            time.sleep(2) 
+            random_wait() 
             
             if not verified:
                 print("Failed: reCAPTCHA was not solved within 60 seconds.")
@@ -299,7 +306,7 @@ Globalwave Softech""",
             if js_status == "ready_to_close":
                 print(f"Success message detected: '{js_message}'")
                 print("Waiting 10 seconds before clicking Close...")
-                time.sleep(10)  # Waiting 10 seconds BEFORE clicking close
+                random_wait()  # Waiting 10 seconds BEFORE clicking close
                 
                 # Now actually click the Close button
                 driver.execute_script("""

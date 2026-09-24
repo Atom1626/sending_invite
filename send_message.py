@@ -7,7 +7,7 @@ from enter_details import fill_contact_form
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
+from helper_utils import random_wait
 
 def clean_company_name(name):
     """Cleans company name by removing 'Profile Card:' prefix, all spaces, and lowercasing."""
@@ -138,7 +138,7 @@ def main():
                 contact_button.click()
                 print("Successfully clicked 'Contact partner'.")
 
-                time.sleep(2)
+                random_wait()
                 
                 # Execute form filling logic - unpack both returned values
                 status, status_msg = fill_contact_form(driver)
