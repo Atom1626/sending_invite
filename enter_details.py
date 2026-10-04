@@ -4,53 +4,17 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from helper_utils import random_wait
 
-def fill_contact_form(driver):
-    """Fills out the contact form, handles dropdowns, reCAPTCHA, and verifies final success."""
+def fill_contact_form(driver, details=None):
+    """Fills out the contact form using strictly the passed details dictionary from the UI."""
 
-
-    # --- DEFINE YOUR DETAILS HERE ---
-    details = {
-        "firstName": "Kiran",
-        "lastName": "K",
-        "email": "kiran@globalwavesoftech.com",
-        "phone": "+91 970144 4296",
-        "company": "Globalwave Softech",
-        "country": "India",
-        "relationship": "Prospective Customer",
-        # Write your multi-line message naturally using triple quotes below:
-        "message": """Sub: SAP Services & Staffing Support - Globalwave Softech
-
-Dear Team,
-
-Greetings from Globalwave Softech!
-
-We are a global SAP services and staffing company with 200+ employees across the USA and India, offering expertise across various SAP modules.
-
-We can support your upcoming requirements through:
-
-SAP Implementation, Support Services & Migration Projects
-Contract & Contract-to-Hire Staffing
-Full-Time Recruitment
-Experienced and immediately available SAP resources
-Competitive and flexible pricing
-We would be happy to connect and understand your current or upcoming SAP requirements and explore opportunities to work together.
-
-Please share your email address and convenient time for a quick call.
-
-You can also reach us at admin@globalwavesoftech.com or kiran@globalwavesoftech.com.
-
-Looking forward to connecting with you.
-
-Best Regards,
-Kiran
-Globalwave Softech""",
-    }
-    # --------------------------------
+    # Require passed details dictionary from UI - no code fallbacks
+    if not details:
+        raise ValueError("Error: Contact details dictionary was not provided from UI.")
 
     wait = WebDriverWait(driver, 15)
 
     try:
-        print("Filling out contact form details...")
+        print("Filling out contact form details from UI inputs...")
         random_wait()  
 
         def set_text_field(name_attr, value):
@@ -59,7 +23,7 @@ Globalwave Softech""",
                     EC.presence_of_element_located((By.NAME, name_attr))
                 )
                 driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
-                driver.execute_script("arguments[0].value = arguments[1];", element, value)
+                driver.execute_script("arguments[0].value = arguments[1];", element, value or "")
                 driver.execute_script(
                     "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));"
                     "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
@@ -68,82 +32,116 @@ Globalwave Softech""",
             except Exception as ex:
                 print(f"Warning: Could not fill field '{name_attr}': {ex}")
 
-        # 1 to 5: Standard Fields
-        set_text_field("firstName", details["firstName"])
+        # 1 to 5: Standard Fields from UI
+        set_text_field("firstName", details.get("firstName", ""))
         random_wait()
-        set_text_field("lastName", details["lastName"])
+        set_text_field("lastName", details.get("lastName", ""))
         random_wait()
-        set_text_field("email", details["email"])
+        set_text_field("email", details.get("email", ""))
         random_wait()
-        set_text_field("phone", details["phone"])
+        set_text_field("phone", details.get("phone", ""))
         random_wait()
-        set_text_field("company", details["company"])
+        set_text_field("company", details.get("company", ""))
         random_wait()
 
-        # 6. Country Selection 
-        print("Selecting country...")
-        try:
-            driver.execute_script("""
-                const host = document.querySelector('udex-country-selector[name="country"]');
-                if (host && host.shadowRoot) {
-                    const trigger = host.shadowRoot.querySelector('.udex-text-field__trigger');
-                    if (trigger) trigger.click();
-                }
-            """)
-            time.sleep(1)
+        # 6. Country Selection (Strictly from UI details)
+        target_country = (details.get("country") or "").strip()
+        print(f"Selecting country from UI details: '{target_country}'...")
 
-            driver.execute_script("""
-                const host = document.querySelector('udex-country-selector[name="country"]');
-                if (host && host.shadowRoot) {
-                    const item = host.shadowRoot.querySelector('udex-list-item#IN') || 
-                                 host.shadowRoot.querySelector('udex-list-item[label*="India"]');
+        iso_map = {
+            "india": "IN",
+            "united states": "US",
+            "us": "US",
+            "usa": "US",
+            "germany": "DE",
+            "united kingdom": "GB",
+            "uk": "GB",
+            "canada": "CA",
+            "australia": "AU"
+        }
+        target_iso = iso_map.get(target_country.lower(), target_country.upper() if len(target_country) == 2 else "")
+
+        if target_country:
+            try:
+                driver.execute_script("""
+                    const host = document.querySelector('udex-country-selector[name="country"]');
+                    if (host && host.shadowRoot) {
+                        const trigger = host.shadowRoot.querySelector('.udex-text-field__trigger');
+                        if (trigger) trigger.click();
+                    }
+                """)
+                time.sleep(1)
+
+                driver.execute_script("""
+                    const host = document.querySelector('udex-country-selector[name="country"]');
+                    const targetIso = arguments[0];
+                    const targetName = (arguments[1] || '').toLowerCase();
                     
-                    if (item) {
-                        item.scrollIntoView({block: 'center'});
-                        item.click();
-                        item.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+                    if (host && host.shadowRoot) {
+                        let item = null;
+                        if (targetIso) {
+                            item = host.shadowRoot.querySelector(`udex-list-item#${targetIso}`) ||
+                                   host.shadowRoot.querySelector(`udex-list-item[id="${targetIso}"]`);
+                        }
+                        if (!item && targetName) {
+                            const items = Array.from(host.shadowRoot.querySelectorAll('udex-list-item'));
+                            item = items.find(i => {
+                                const lbl = (i.getAttribute('label') || i.textContent || '').toLowerCase();
+                                return lbl.includes(targetName);
+                            });
+                        }
                         
-                        if (item.shadowRoot) {
-                            const innerItem = item.shadowRoot.querySelector('li') || item.shadowRoot.firstElementChild;
-                            if (innerItem) innerItem.click();
+                        if (item) {
+                            item.scrollIntoView({block: 'center'});
+                            item.click();
+                            item.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+                            
+                            if (item.shadowRoot) {
+                                const innerItem = item.shadowRoot.querySelector('li') || item.shadowRoot.firstElementChild;
+                                if (innerItem) innerItem.click();
+                            }
                         }
                     }
-                }
-            """)
-        except Exception as e:
-            print(f"Error selecting country: {e}")
+                """, target_iso, target_country)
+            except Exception as e:
+                print(f"Error selecting country: {e}")
 
-        # 7. Relationship Selection
-        print("Selecting relationship...")
-        try:
-            driver.execute_script("""
-                const host = document.querySelector('udex-select-box[name="relationship"]');
-                if (host && host.shadowRoot) {
-                    const trigger = host.shadowRoot.querySelector('.udex-text-field__trigger');
-                    if (trigger) trigger.click();
-                }
-            """)
-            time.sleep(1)
+        # 7. Relationship Selection (Strictly from UI details)
+        target_rel = (details.get("relationship") or "").strip()
+        print(f"Selecting relationship from UI details: '{target_rel}'...")
+        if target_rel:
+            try:
+                driver.execute_script("""
+                    const host = document.querySelector('udex-select-box[name="relationship"]');
+                    if (host && host.shadowRoot) {
+                        const trigger = host.shadowRoot.querySelector('.udex-text-field__trigger');
+                        if (trigger) trigger.click();
+                    }
+                """)
+                time.sleep(1)
 
-            driver.execute_script("""
-                const host = document.querySelector('udex-select-box[name="relationship"]');
-                if (host && host.shadowRoot) {
-                    const item = host.shadowRoot.querySelector('udex-list-item[label="Prospective Customer"]');
-                    
-                    if (item) {
-                        item.scrollIntoView({block: 'center'});
-                        item.click();
-                        item.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+                driver.execute_script("""
+                    const host = document.querySelector('udex-select-box[name="relationship"]');
+                    const targetRel = arguments[0];
+                    if (host && host.shadowRoot) {
+                        const items = Array.from(host.shadowRoot.querySelectorAll('udex-list-item, udex-select-box-item'));
+                        let item = items.find(i => (i.getAttribute('label') || i.textContent || '').trim().toLowerCase() === targetRel.toLowerCase()) ||
+                                   items.find(i => (i.getAttribute('label') || i.textContent || '').toLowerCase().includes(targetRel.toLowerCase()));
                         
-                        if (item.shadowRoot) {
-                            const innerItem = item.shadowRoot.querySelector('li') || item.shadowRoot.firstElementChild;
-                            if (innerItem) innerItem.click();
+                        if (item) {
+                            item.scrollIntoView({block: 'center'});
+                            item.click();
+                            item.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+                            
+                            if (item.shadowRoot) {
+                                const innerItem = item.shadowRoot.querySelector('li') || item.shadowRoot.firstElementChild;
+                                if (innerItem) innerItem.click();
+                            }
                         }
                     }
-                }
-            """)
-        except Exception as e:
-            print(f"Error selecting relationship: {e}")
+                """, target_rel)
+            except Exception as e:
+                print(f"Error selecting relationship: {e}")
 
         # 8. Message Textarea
         try:

@@ -19,12 +19,8 @@ def setup_driver():
     return driver
 
 
-def main():
-    # --- CONFIGURATION FOR PAGES ---
-    from_page = 158
-    to_page = 159
-    # -------------------------------
-
+def run_get_links(from_page=158, to_page=159, log_func=print, stop_event=None, auto_close=False):
+    """Extract profile links across a range of pages and save to Excel."""
     # Step 1: Load the base URL from config.json
     try:
         with open("config.json", "r") as f:
@@ -35,24 +31,23 @@ def main():
             raise ValueError("The 'url' key is missing in config.json")
 
     except FileNotFoundError:
-        print("Error: 'config.json' file not found. Please create it.")
+        log_func("Error: 'config.json' file not found. Please create it.")
         return
     except json.JSONDecodeError:
-        print("Error: 'config.json' is not a valid JSON file.")
+        log_func("Error: 'config.json' is not a valid JSON file.")
         return
 
-    # Clean up base URL by removing any pre-existing page parameters (e.g., &page=157 or ?page=157)
-    # This prevents duplicate/conflicting parameters like &page=157&page=158
+    # Clean up base URL by removing any pre-existing page parameters
     clean_base_url = re.sub(r"([?&])page=\d+", "", raw_base_url)
     
-    # Ensure proper separator (? or &) for appending our clean page parameter
+    # Ensure proper separator (? or &)
     if "?" in clean_base_url:
         separator = "&"
     else:
         separator = "?"
 
     # Step 2: Initialize the browser
-    print("Initializing browser...")
+    log_func("Initializing browser...")
     driver = setup_driver()
 
     all_extracted_data = []
@@ -60,17 +55,21 @@ def main():
     try:
         # Loop through the specified page range
         for page_num in range(from_page, to_page + 1):
-            print(f"\n--- Processing Page {page_num} ---")
+            if stop_event and stop_event.is_set():
+                log_func("[CANCELLED] Process stopped by user.")
+                break
+
+            log_func(f"\n--- Processing Page {page_num} ---")
 
             # Construct the exact URL for the current page
             current_url = f"{clean_base_url}{separator}page={page_num}"
 
-            print(f"Navigating to: {current_url}")
+            log_func(f"Navigating to: {current_url}")
             driver.get(current_url)
 
             # Handle cookie banner only on the first page load
             if page_num == from_page:
-                print("Checking for cookie consent banner...")
+                log_func("Checking for cookie consent banner...")
                 try:
                     accept_button = WebDriverWait(driver, 5).until(
                         EC.element_to_be_clickable(
@@ -78,26 +77,30 @@ def main():
                         )
                     )
                     accept_button.click()
-                    print("Successfully clicked 'I accept all cookies'.")
+                    log_func("Successfully clicked 'I accept all cookies'.")
                 except Exception:
-                    print(
+                    log_func(
                         "Cookie banner not found or already accepted. Continuing..."
                     )
 
             # Wait for content cards to load
-            print("Waiting for profile cards to load...")
+            log_func("Waiting for profile cards to load...")
             time.sleep(4)
 
-            # Locate profile cards using your specific container XPath
+            if stop_event and stop_event.is_set():
+                log_func("[CANCELLED] Process stopped by user.")
+                break
+
+            # Locate profile cards using specific container XPath
             xpath_query = '//*[@id="app"]/main/div/div/div[2]//udex-tile[contains(@class, "pf-card-tile") or contains(@accessible-name, "Profile Card")]'
             cards = driver.find_elements(By.XPATH, xpath_query)
 
             # Fallback if specific XPath didn't return cards
             if not cards:
-                print("Trying fallback XPath to locate profile tiles...")
+                log_func("Trying fallback XPath to locate profile tiles...")
                 cards = driver.find_elements(By.TAG_NAME, "udex-tile")
 
-            print(f"Found {len(cards)} profile cards on page {page_num}.")
+            log_func(f"Found {len(cards)} profile cards on page {page_num}.")
 
             page_data_count = 0
             for card in cards:
@@ -116,14 +119,17 @@ def main():
                     )
                     page_data_count += 1
 
-            print(
+            log_func(
                 f"Successfully extracted {page_data_count} records from page {page_num}."
             )
 
             # If this is not the last page, add a random 15 to 20 second timeout to protect the server
             if page_num < to_page:
+                if stop_event and stop_event.is_set():
+                    log_func("[CANCELLED] Process stopped by user.")
+                    break
                 wait_time = random.uniform(15, 20)
-                print(
+                log_func(
                     f"Waiting for {wait_time:.2f} seconds before moving to the next page..."
                 )
                 time.sleep(wait_time)
@@ -133,18 +139,26 @@ def main():
             df = pd.DataFrame(all_extracted_data)
             excel_filename = f"profile_cards_pages_{from_page}_to_{to_page}.xlsx"
             df.to_excel(excel_filename, index=False)
-            print(
+            log_func(
                 f"\n[SUCCESS] Saved a total of {len(all_extracted_data)} records to '{excel_filename}'."
             )
         else:
-            print("\n[WARNING] No profile data found across the specified pages.")
+            log_func("\n[WARNING] No profile data found across the specified pages.")
 
-        # Pause to let you view the final state before closing
-        input("\nPress Enter to close the browser...")
+        if not auto_close:
+            input("\nPress Enter to close the browser...")
 
     finally:
         # Step 4: Clean up and close the browser
         driver.quit()
+
+
+def main():
+    # --- CONFIGURATION FOR PAGES ---
+    from_page = 158
+    to_page = 159
+    # -------------------------------
+    run_get_links(from_page, to_page, log_func=print, auto_close=False)
 
 
 if __name__ == "__main__":
