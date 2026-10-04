@@ -16,6 +16,8 @@ try:
 except ImportError as e:
     messagebox.showerror("Import Error", f"Failed to import automation scripts:\n{e}")
 
+APP_VERSION = "2.0.0"
+
 CONFIG_SETTINGS_FILE = "gui_settings.json"
 
 DEFAULT_SETTINGS = {
@@ -62,7 +64,7 @@ Globalwave Softech"""
 class AutomationGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("SAP Automation Suite — Pill Segmented Edition")
+        self.root.title(f"SAP Partner Finder Suite v{APP_VERSION}")
         self.root.geometry("1080x820")
         self.root.minsize(920, 720)
 
@@ -264,24 +266,19 @@ class AutomationGUI:
         style.map("TButton", background=[("active", "#e2e8f0")])
 
     def create_widgets(self):
-        # Top Header Banner Frame
+        # Top Header Banner Frame (Tighter top padding to move elements UP)
         header_frame = ttk.Frame(self.root)
-        header_frame.pack(fill="x", padx=24, pady=(16, 4))
+        header_frame.pack(fill="x", padx=24, pady=(10, 2))
 
         title_box = ttk.Frame(header_frame)
         title_box.pack(side="left")
 
-        # 3D Badge pill above title
-        badge_frame = tk.Frame(title_box, bg="#4f46e5", padx=10, pady=3, relief="raised", bd=2)
-        badge_frame.pack(anchor="w", pady=(0, 4))
-        tk.Label(badge_frame, text="⚡ AUTOMATION ENGINE v2.0", font=("DejaVu Sans", 8, "bold"), bg="#4f46e5", fg="#ffffff").pack()
-
-        ttk.Label(title_box, text="SAP Partner Finder Suite", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(title_box, text=f"SAP Partner Finder Suite v{APP_VERSION}", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_box, text="Extract target profile links and dispatch message invites seamlessly.", style="TLabel", foreground="#64748b").pack(anchor="w")
 
         # --- 3D SEGMENTED TAB SWITCHER ---
         nav_bar_frame = ttk.Frame(self.root)
-        nav_bar_frame.pack(fill="x", padx=24, pady=(8, 4))
+        nav_bar_frame.pack(fill="x", padx=24, pady=(6, 2))
 
         # Sunken 3D segment track container
         nav_track = tk.Frame(nav_bar_frame, bg="#e2e8f0", padx=4, pady=4, relief="sunken", bd=2)
