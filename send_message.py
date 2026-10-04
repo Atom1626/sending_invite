@@ -7,7 +7,7 @@ from enter_details import fill_contact_form
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from helper_utils import random_wait
+from helper_utils import random_wait, get_installed_chrome_major_version
 
 def clean_company_name(name):
     """Cleans company name by removing 'Profile Card:' prefix, all spaces, and lowercasing."""
@@ -24,12 +24,18 @@ def clean_company_name(name):
 
 
 def setup_driver():
-    """Initialize and return a configured undetected Chrome WebDriver."""
+    """Initialize and return a configured undetected Chrome WebDriver with auto Chrome version detection."""
     options = uc.ChromeOptions()
     options.add_argument("--start-maximized")
 
-    # Match your local Chrome version (131)
-    driver = uc.Chrome(options=options, version_main=131)
+    major_v = get_installed_chrome_major_version()
+    if major_v:
+        driver = uc.Chrome(options=options, version_main=major_v)
+    else:
+        try:
+            driver = uc.Chrome(options=options)
+        except Exception:
+            driver = uc.Chrome()
     return driver
 
 

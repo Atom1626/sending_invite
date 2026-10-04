@@ -9,13 +9,22 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 
+from helper_utils import get_installed_chrome_major_version
+
+
 def setup_driver():
-    """Initialize and return a configured undetected Chrome WebDriver."""
+    """Initialize and return a configured undetected Chrome WebDriver with auto Chrome version detection."""
     options = uc.ChromeOptions()
     options.add_argument("--start-maximized")
 
-    # Pass version_main to match your local Chrome (131)
-    driver = uc.Chrome(options=options, version_main=131)
+    major_v = get_installed_chrome_major_version()
+    if major_v:
+        driver = uc.Chrome(options=options, version_main=major_v)
+    else:
+        try:
+            driver = uc.Chrome(options=options)
+        except Exception:
+            driver = uc.Chrome()
     return driver
 
 
