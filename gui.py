@@ -472,40 +472,40 @@ class AutomationGUI:
 
         # LEFT SIDE: Input Fields
         left_frame = ttk.Frame(body_frame, style="CardInner.TFrame")
-        left_frame.pack(side="left", fill="y", anchor="n", padx=(0, 16))
+        left_frame.pack(side="left", fill="y", anchor="n", padx=(0, 24))
 
         ttk.Label(left_frame, text="First Name:", style="Card.TLabel").grid(row=0, column=0, sticky="w", padx=4, pady=3)
-        self.entry_fn = ttk.Entry(left_frame, width=14)
+        self.entry_fn = ttk.Entry(left_frame, width=20)
         self.entry_fn.insert(0, self.settings.get("firstName", ""))
         self.entry_fn.grid(row=0, column=1, sticky="w", padx=4, pady=3)
 
         ttk.Label(left_frame, text="Last Name:", style="Card.TLabel").grid(row=0, column=2, sticky="w", padx=4, pady=3)
-        self.entry_ln = ttk.Entry(left_frame, width=14)
+        self.entry_ln = ttk.Entry(left_frame, width=20)
         self.entry_ln.insert(0, self.settings.get("lastName", ""))
         self.entry_ln.grid(row=0, column=3, sticky="w", padx=4, pady=3)
 
         ttk.Label(left_frame, text="Email:", style="Card.TLabel").grid(row=1, column=0, sticky="w", padx=4, pady=3)
-        self.entry_email = ttk.Entry(left_frame, width=14)
+        self.entry_email = ttk.Entry(left_frame, width=20)
         self.entry_email.insert(0, self.settings.get("email", ""))
         self.entry_email.grid(row=1, column=1, sticky="w", padx=4, pady=3)
 
         ttk.Label(left_frame, text="Phone:", style="Card.TLabel").grid(row=1, column=2, sticky="w", padx=4, pady=3)
-        self.entry_phone = ttk.Entry(left_frame, width=14)
+        self.entry_phone = ttk.Entry(left_frame, width=20)
         self.entry_phone.insert(0, self.settings.get("phone", ""))
         self.entry_phone.grid(row=1, column=3, sticky="w", padx=4, pady=3)
 
         ttk.Label(left_frame, text="Company:", style="Card.TLabel").grid(row=2, column=0, sticky="w", padx=4, pady=3)
-        self.entry_company = ttk.Entry(left_frame, width=14)
+        self.entry_company = ttk.Entry(left_frame, width=20)
         self.entry_company.insert(0, self.settings.get("company", ""))
         self.entry_company.grid(row=2, column=1, sticky="w", padx=4, pady=3)
 
         ttk.Label(left_frame, text="Country:", style="Card.TLabel").grid(row=2, column=2, sticky="w", padx=4, pady=3)
-        self.combo_country = ttk.Combobox(left_frame, values=["India", "United States", "Germany", "United Kingdom", "Canada", "Australia"], width=12)
+        self.combo_country = ttk.Combobox(left_frame, values=["India", "United States", "Germany", "United Kingdom", "Canada", "Australia"], width=18)
         self.combo_country.set(self.settings.get("country", "India"))
         self.combo_country.grid(row=2, column=3, sticky="w", padx=4, pady=3)
 
         ttk.Label(left_frame, text="Relationship:", style="Card.TLabel").grid(row=3, column=0, sticky="w", padx=4, pady=3)
-        self.combo_rel = ttk.Combobox(left_frame, values=["Prospective Customer", "Customer", "Partner", "Other"], width=12)
+        self.combo_rel = ttk.Combobox(left_frame, values=["Prospective Customer", "Customer", "Partner", "Other"], width=18)
         self.combo_rel.set(self.settings.get("relationship", "Prospective Customer"))
         self.combo_rel.grid(row=3, column=1, sticky="w", padx=4, pady=3)
 
@@ -543,11 +543,11 @@ class AutomationGUI:
 
         # Progress bar
         self.progress_send = ttk.Progressbar(main_frame, mode="indeterminate", style="Horizontal.TProgressbar")
-        self.progress_send.pack(fill="x", pady=4)
+        self.progress_send.pack(fill="x", pady=(6, 2))
 
-        # --- LOG CONSOLE SPANNING FULL WIDTH ---
+        # --- LOG CONSOLE SPANNING FULL WIDTH (Pushed further down) ---
         log_card = tk.Frame(main_frame, bg="#0f172a", relief="sunken", bd=3)
-        log_card.pack(fill="both", expand=True, pady=4)
+        log_card.pack(fill="both", expand=True, pady=(16, 6))
 
         term_bar = tk.Frame(log_card, bg="#1e293b", padx=10, pady=5)
         term_bar.pack(fill="x")
