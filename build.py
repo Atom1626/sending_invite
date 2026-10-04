@@ -10,7 +10,7 @@ import shutil
 import sys
 import subprocess
 
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.2.0"
 
 def run_build():
     print("==================================================")
@@ -59,6 +59,11 @@ def run_build():
         "--collect-all=selenium",
         "--collect-all=pandas",
         "--collect-all=openpyxl",
+
+        # Exclude heavy unused packages
+        "--exclude-module=pytest",
+        "--exclude-module=scipy",
+        "--exclude-module=matplotlib",
 
         # Explicit Hidden Imports (Local and Third-Party)
         "--hidden-import=test1",
