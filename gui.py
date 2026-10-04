@@ -139,34 +139,39 @@ class AutomationGUI:
                 messagebox.showerror("Error", f"Could not save settings: {e}")
 
     def apply_theme(self):
-        """Configure TTK styles for Light Claymorphism with Purple Canvas & White Rounded Cards."""
+        """Configure TTK styles for Modern White 3D Tactile SaaS Theme."""
         style = ttk.Style()
         style.theme_use("clam")
 
-        # Color Palette
-        self.c_bg_main = "#6d28d9"        # Rich Purple Canvas Background
-        self.c_card_bg = "#ffffff"        # Pure White Soft Clay Card Surface
-        self.c_fg_dark = "#0f172a"        # Bold Dark Charcoal Title Text
+        # Color Palette - Modern White & Indigo 3D Tactile
+        self.c_bg_main = "#f1f5f9"        # Clean Crisp Light Slate/White Canvas
+        self.c_card_bg = "#ffffff"        # Pure White Elevated 3D Card Surface
+        self.c_fg_primary = "#0f172a"     # Dark Charcoal Text
         self.c_fg_subtle = "#64748b"      # Muted Slate Text
-        self.c_input_bg = "#f8fafc"      # Soft White Inset Input Box
+        self.c_input_bg = "#f8fafc"       # Soft White Inset Input Box
+        self.c_border = "#cbd5e1"         # Crisp Slate Border
 
-        self.c_purple_btn = "#9333ea"    # Vibrant Purple Action Button
-        self.c_dark_violet = "#1e1b4b"    # Deep Dark Violet Button
-        self.c_rose_btn = "#e11d48"       # Soft Rose Crimson Button
+        # Vibrant Accent Palette
+        self.c_indigo_btn = "#4f46e5"     # Vivid Indigo (Primary Action)
+        self.c_emerald_btn = "#0d9488"    # Emerald Teal (Save Action)
+        self.c_rose_btn = "#e11d48"       # Rose Crimson (Stop Action)
+        self.c_slate_btn = "#e2e8f0"      # Light Slate (Secondary Utility)
 
         self.root.configure(bg=self.c_bg_main)
 
-        # Base frames
+        # Base frame
         style.configure("TFrame", background=self.c_bg_main)
 
-        # White Clay Card Container
-        style.configure("WhiteClayCard.TFrame", 
+        # Elevated 3D White Card Container Styles
+        style.configure("SaaSCard.TFrame", 
                         background=self.c_card_bg, 
-                        relief="flat", 
-                        borderwidth=0, 
-                        padding=14)
+                        relief="raised", 
+                        borderwidth=2, 
+                        lightcolor="#ffffff",
+                        darkcolor="#cbd5e1",
+                        bordercolor="#cbd5e1",
+                        padding=16)
 
-        # CardInner.TFrame for nested white containers without extra padding
         style.configure("CardInner.TFrame", 
                         background=self.c_card_bg, 
                         relief="flat", 
@@ -174,60 +179,86 @@ class AutomationGUI:
                         padding=0)
 
         # Label styles
-        style.configure("TLabel", background=self.c_bg_main, foreground="#ffffff", font=("DejaVu Sans", 10))
-        style.configure("Card.TLabel", background=self.c_card_bg, foreground=self.c_fg_dark, font=("DejaVu Sans", 10, "bold"))
+        style.configure("TLabel", background=self.c_bg_main, foreground=self.c_fg_primary, font=("DejaVu Sans", 10))
+        style.configure("Card.TLabel", background=self.c_card_bg, foreground=self.c_fg_primary, font=("DejaVu Sans", 10, "bold"))
         style.configure("Sub.TLabel", background=self.c_card_bg, foreground=self.c_fg_subtle, font=("DejaVu Sans", 9))
-        style.configure("Header.TLabel", background=self.c_card_bg, foreground=self.c_fg_dark, font=("DejaVu Sans", 13, "bold"))
-        style.configure("Title.TLabel", background=self.c_bg_main, foreground="#ffffff", font=("DejaVu Sans", 16, "bold"))
+        style.configure("Header.TLabel", background=self.c_card_bg, foreground=self.c_fg_primary, font=("DejaVu Sans", 12, "bold"))
+        style.configure("Title.TLabel", background=self.c_bg_main, foreground=self.c_fg_primary, font=("DejaVu Sans", 17, "bold"))
 
-        # Entry and Combobox styling
+        # Inset 3D Entry and Combobox styling
         style.configure("TEntry", 
                         fieldbackground=self.c_input_bg, 
-                        foreground=self.c_fg_dark, 
-                        bordercolor="#cbd5e1",
-                        lightcolor="#f1f5f9",
-                        darkcolor="#cbd5e1",
-                        padding=5)
+                        foreground=self.c_fg_primary, 
+                        bordercolor=self.c_border,
+                        lightcolor="#94a3b8",
+                        darkcolor="#e2e8f0",
+                        relief="sunken",
+                        padding=6)
         
         style.configure("TCombobox", 
                         fieldbackground=self.c_input_bg, 
                         background=self.c_card_bg,
-                        foreground=self.c_fg_dark, 
-                        bordercolor="#cbd5e1",
-                        padding=5)
-        style.map("TCombobox", fieldbackground=[("readonly", self.c_input_bg)], foreground=[("readonly", self.c_fg_dark)])
+                        foreground=self.c_fg_primary, 
+                        bordercolor=self.c_border,
+                        padding=6)
+        style.map("TCombobox", fieldbackground=[("readonly", self.c_input_bg)], foreground=[("readonly", self.c_fg_primary)])
 
-        # Button Styles (Pill Claymorphic Feel)
-        style.configure("PurpleClay.TButton", 
-                        background=self.c_purple_btn, 
+        # Progressbar
+        style.configure("Horizontal.TProgressbar", 
+                        troughcolor="#e2e8f0", 
+                        background=self.c_indigo_btn, 
+                        bordercolor=self.c_border,
+                        lightcolor=self.c_indigo_btn,
+                        darkcolor=self.c_indigo_btn)
+
+        # Button Styles (3D Tactile Felt Buttons)
+        style.configure("Indigo.TButton", 
+                        background=self.c_indigo_btn, 
                         foreground="#ffffff", 
                         font=("DejaVu Sans", 10, "bold"), 
-                        relief="flat", 
-                        borderwidth=0,
-                        padding=[12, 7])
-        style.map("PurpleClay.TButton", background=[("active", "#a855f7"), ("disabled", "#cbd5e1")])
+                        relief="raised", 
+                        borderwidth=2,
+                        lightcolor="#818cf8",
+                        darkcolor="#3730a3",
+                        padding=[14, 7])
+        style.map("Indigo.TButton", background=[("active", "#4338ca"), ("disabled", "#cbd5e1")])
 
-        style.configure("DarkVioletClay.TButton", 
-                        background=self.c_dark_violet, 
+        style.configure("Emerald.TButton", 
+                        background=self.c_emerald_btn, 
                         foreground="#ffffff", 
                         font=("DejaVu Sans", 10, "bold"), 
-                        relief="flat", 
-                        borderwidth=0,
-                        padding=[12, 7])
-        style.map("DarkVioletClay.TButton", background=[("active", "#312e81"), ("disabled", "#cbd5e1")])
+                        relief="raised", 
+                        borderwidth=2,
+                        lightcolor="#2dd4bf",
+                        darkcolor="#115e59",
+                        padding=[14, 7])
+        style.map("Emerald.TButton", background=[("active", "#0f766e"), ("disabled", "#cbd5e1")])
 
-        style.configure("RoseClay.TButton", 
+        style.configure("Rose.TButton", 
                         background=self.c_rose_btn, 
                         foreground="#ffffff", 
                         font=("DejaVu Sans", 10, "bold"), 
-                        relief="flat", 
-                        borderwidth=0,
-                        padding=[12, 7])
-        style.map("RoseClay.TButton", background=[("active", "#f43f5e"), ("disabled", "#cbd5e1")])
+                        relief="raised", 
+                        borderwidth=2,
+                        lightcolor="#fb7185",
+                        darkcolor="#9f1239",
+                        padding=[14, 7])
+        style.map("Rose.TButton", background=[("active", "#be123c"), ("disabled", "#cbd5e1")])
+
+        style.configure("Slate.TButton", 
+                        background=self.c_slate_btn, 
+                        foreground="#334155", 
+                        font=("DejaVu Sans", 9, "bold"), 
+                        relief="raised", 
+                        borderwidth=2,
+                        lightcolor="#ffffff",
+                        darkcolor="#94a3b8",
+                        padding=[10, 6])
+        style.map("Slate.TButton", background=[("active", "#cbd5e1")])
 
         style.configure("TButton", 
                         background="#f1f5f9", 
-                        foreground="#6d28d9", 
+                        foreground="#334155", 
                         font=("DejaVu Sans", 9, "bold"), 
                         padding=5)
         style.map("TButton", background=[("active", "#e2e8f0")])
@@ -235,49 +266,56 @@ class AutomationGUI:
     def create_widgets(self):
         # Top Header Banner Frame
         header_frame = ttk.Frame(self.root)
-        header_frame.pack(fill="x", padx=20, pady=(14, 2))
+        header_frame.pack(fill="x", padx=24, pady=(16, 4))
 
         title_box = ttk.Frame(header_frame)
         title_box.pack(side="left")
-        ttk.Label(title_box, text="SAP Partner Finder Automation", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(title_box, text="How to extract profiles and send invites with ease.", style="TLabel", foreground="#e9d5ff").pack(anchor="w")
 
-        # --- PILL SEGMENTED TAB SWITCHER (Tight top-left position) ---
+        # 3D Badge pill above title
+        badge_frame = tk.Frame(title_box, bg="#4f46e5", padx=10, pady=3, relief="raised", bd=2)
+        badge_frame.pack(anchor="w", pady=(0, 4))
+        tk.Label(badge_frame, text="⚡ AUTOMATION ENGINE v2.0", font=("DejaVu Sans", 8, "bold"), bg="#4f46e5", fg="#ffffff").pack()
+
+        ttk.Label(title_box, text="SAP Partner Finder Suite", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(title_box, text="Extract target profile links and dispatch message invites seamlessly.", style="TLabel", foreground="#64748b").pack(anchor="w")
+
+        # --- 3D SEGMENTED TAB SWITCHER ---
         nav_bar_frame = ttk.Frame(self.root)
-        nav_bar_frame.pack(fill="x", padx=20, pady=(4, 0))
+        nav_bar_frame.pack(fill="x", padx=24, pady=(8, 4))
 
-        nav_track = tk.Frame(nav_bar_frame, bg="#5b21b6", padx=3, pady=3)
+        # Sunken 3D segment track container
+        nav_track = tk.Frame(nav_bar_frame, bg="#e2e8f0", padx=4, pady=4, relief="sunken", bd=2)
         nav_track.pack(side="left")
 
         self.tab_btn_get_links = tk.Button(
             nav_track, 
             text="Get Links", 
             font=("DejaVu Sans", 10, "bold"),
-            bd=0, 
-            relief="flat", 
-            padx=20, 
+            bd=2, 
+            relief="raised", 
+            padx=22, 
             pady=7,
             cursor="hand2",
             command=lambda: self.switch_tab("get_links")
         )
-        self.tab_btn_get_links.pack(side="left", padx=1)
+        self.tab_btn_get_links.pack(side="left", padx=2)
 
         self.tab_btn_send_invite = tk.Button(
             nav_track, 
             text="Sending Invite", 
             font=("DejaVu Sans", 10, "bold"),
-            bd=0, 
-            relief="flat", 
-            padx=20, 
+            bd=2, 
+            relief="raised", 
+            padx=22, 
             pady=7,
             cursor="hand2",
             command=lambda: self.switch_tab("send_invite")
         )
-        self.tab_btn_send_invite.pack(side="left", padx=1)
+        self.tab_btn_send_invite.pack(side="left", padx=2)
 
-        # Content Container Frame (Tight vertical spacing)
+        # Content Container Frame
         self.content_container = ttk.Frame(self.root)
-        self.content_container.pack(fill="both", expand=True, padx=20, pady=(0, 10))
+        self.content_container.pack(fill="both", expand=True, padx=24, pady=(4, 12))
 
         self.tab_get_links = ttk.Frame(self.content_container)
         self.tab_send_invite = ttk.Frame(self.content_container)
@@ -289,22 +327,22 @@ class AutomationGUI:
         self.switch_tab("get_links")
 
     def switch_tab(self, tab_name):
-        """Switch active tab content and update Pill Segmented Switcher styling."""
+        """Switch active tab content and update 3D Pill Segmented Switcher styling."""
         self.tab_get_links.pack_forget()
         self.tab_send_invite.pack_forget()
 
-        active_bg = "#ddd6fe"   # Soft Lavender Capsule Highlight
-        active_fg = "#2e1065"   # Deep Dark Violet Text
-        inactive_bg = "#5b21b6" # Dark Purple Segment Track
-        inactive_fg = "#e9d5ff" # Light Purple Text
+        active_bg = "#4f46e5"   # Vivid Indigo 3D Active Pill
+        active_fg = "#ffffff"   # White Text
+        inactive_bg = "#ffffff" # Elevated White Inactive Pill
+        inactive_fg = "#475569" # Slate Text
 
         if tab_name == "get_links":
-            self.tab_btn_get_links.config(bg=active_bg, fg=active_fg, activebackground=active_bg, activeforeground=active_fg)
-            self.tab_btn_send_invite.config(bg=inactive_bg, fg=inactive_fg, activebackground=inactive_bg, activeforeground=inactive_fg)
+            self.tab_btn_get_links.config(bg=active_bg, fg=active_fg, relief="raised", bd=2, activebackground=active_bg, activeforeground=active_fg)
+            self.tab_btn_send_invite.config(bg=inactive_bg, fg=inactive_fg, relief="flat", bd=0, activebackground="#f1f5f9", activeforeground="#0f172a")
             self.tab_get_links.pack(fill="both", expand=True)
         else:
-            self.tab_btn_send_invite.config(bg=active_bg, fg=active_fg, activebackground=active_bg, activeforeground=active_fg)
-            self.tab_btn_get_links.config(bg=inactive_bg, fg=inactive_fg, activebackground=inactive_bg, activeforeground=inactive_fg)
+            self.tab_btn_send_invite.config(bg=active_bg, fg=active_fg, relief="raised", bd=2, activebackground=active_bg, activeforeground=active_fg)
+            self.tab_btn_get_links.config(bg=inactive_bg, fg=inactive_fg, relief="flat", bd=0, activebackground="#f1f5f9", activeforeground="#0f172a")
             self.tab_send_invite.pack(fill="both", expand=True)
 
     # ================= TAB 1: GET LINKS =================
@@ -312,12 +350,12 @@ class AutomationGUI:
         main_frame = ttk.Frame(self.tab_get_links)
         main_frame.pack(fill="both", expand=True, padx=4, pady=4)
 
-        # White Clay Card: Controls
-        ctrl_card = ttk.Frame(main_frame, style="WhiteClayCard.TFrame")
+        # 3D Elevated White Card: Controls
+        ctrl_card = ttk.Frame(main_frame, style="SaaSCard.TFrame")
         ctrl_card.pack(fill="x", pady=6)
 
         ttk.Label(ctrl_card, text="Link Extraction Parameters", style="Header.TLabel").grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 2))
-        ttk.Label(ctrl_card, text="Configure target search page range to extract profile cards into Excel.", style="Sub.TLabel").grid(row=1, column=0, columnspan=4, sticky="w", pady=(0, 8))
+        ttk.Label(ctrl_card, text="Configure target search page range to extract profile cards into Excel.", style="Sub.TLabel").grid(row=1, column=0, columnspan=4, sticky="w", pady=(0, 10))
 
         ttk.Label(ctrl_card, text="From Page:", style="Card.TLabel").grid(row=2, column=0, sticky="w", padx=6, pady=5)
         self.entry_get_from = ttk.Entry(ctrl_card, width=10)
@@ -330,39 +368,49 @@ class AutomationGUI:
         self.entry_get_to.grid(row=2, column=3, sticky="w", padx=6, pady=5)
 
         # Target Excel Output Display
-        self.lbl_get_file = ttk.Label(ctrl_card, text="", style="Sub.TLabel", foreground="#7c3aed")
+        self.lbl_get_file = ttk.Label(ctrl_card, text="", style="Sub.TLabel", foreground="#4f46e5")
         self.lbl_get_file.grid(row=3, column=0, columnspan=4, sticky="w", padx=6, pady=5)
         self.update_get_filename_label()
 
         self.entry_get_from.bind("<KeyRelease>", lambda e: self.update_get_filename_label())
         self.entry_get_to.bind("<KeyRelease>", lambda e: self.update_get_filename_label())
 
-        # Buttons Bar (Claymorphic Pills)
-        btn_frame = ttk.Frame(ctrl_card, style="WhiteClayCard.TFrame")
-        btn_frame.grid(row=4, column=0, columnspan=4, sticky="w", pady=10)
+        # Action Buttons Bar
+        btn_frame = ttk.Frame(ctrl_card, style="CardInner.TFrame")
+        btn_frame.grid(row=4, column=0, columnspan=4, sticky="w", pady=(10, 0))
 
-        self.btn_get_start = ttk.Button(btn_frame, text="Start Get Links", style="PurpleClay.TButton", command=self.start_get_links)
-        self.btn_get_start.pack(side="left", padx=5)
+        self.btn_get_start = ttk.Button(btn_frame, text="Start Get Links", style="Indigo.TButton", command=self.start_get_links)
+        self.btn_get_start.pack(side="left", padx=(0, 6))
 
-        self.btn_get_stop = ttk.Button(btn_frame, text="Stop Process", style="RoseClay.TButton", command=self.stop_task, state="disabled")
-        self.btn_get_stop.pack(side="left", padx=5)
+        self.btn_get_stop = ttk.Button(btn_frame, text="Stop Process", style="Rose.TButton", command=self.stop_task, state="disabled")
+        self.btn_get_stop.pack(side="left", padx=6)
 
-        ttk.Button(btn_frame, text="Clear Log", command=lambda: self.clear_log(self.log_get_links)).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Open Folder", command=self.open_output_dir).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Clear Log", style="Slate.TButton", command=lambda: self.clear_log(self.log_get_links)).pack(side="left", padx=6)
+        ttk.Button(btn_frame, text="Open Folder", style="Slate.TButton", command=self.open_output_dir).pack(side="left", padx=6)
 
         # Progress bar
-        self.progress_get = ttk.Progressbar(main_frame, mode="indeterminate")
-        self.progress_get.pack(fill="x", pady=5)
+        self.progress_get = ttk.Progressbar(main_frame, mode="indeterminate", style="Horizontal.TProgressbar")
+        self.progress_get.pack(fill="x", pady=6)
 
-        # Log Console Container
-        log_frame = ttk.Frame(main_frame)
-        log_frame.pack(fill="both", expand=True, pady=5)
+        # Log Console Container with 3D Bevel and macOS Terminal Bar Header
+        log_card = tk.Frame(main_frame, bg="#0f172a", relief="sunken", bd=3)
+        log_card.pack(fill="both", expand=True, pady=4)
 
-        ttk.Label(log_frame, text="Live Extraction Terminal Log:").pack(anchor="w", pady=(0, 4))
+        term_bar = tk.Frame(log_card, bg="#1e293b", padx=10, pady=5)
+        term_bar.pack(fill="x")
+        
+        dots_frame = tk.Frame(term_bar, bg="#1e293b")
+        dots_frame.pack(side="left")
+        tk.Label(dots_frame, text="●", fg="#ef4444", bg="#1e293b", font=("DejaVu Sans", 10)).pack(side="left", padx=2)
+        tk.Label(dots_frame, text="●", fg="#f59e0b", bg="#1e293b", font=("DejaVu Sans", 10)).pack(side="left", padx=2)
+        tk.Label(dots_frame, text="●", fg="#10b981", bg="#1e293b", font=("DejaVu Sans", 10)).pack(side="left", padx=2)
+
+        tk.Label(term_bar, text="LIVE EXTRACTION TERMINAL LOG", bg="#1e293b", fg="#94a3b8", font=("DejaVu Sans", 8, "bold")).pack(side="left", padx=10)
+
         self.log_get_links = ScrolledText(
-            log_frame, 
-            bg="#1e1b4b", 
-            fg="#f8fafc", 
+            log_card, 
+            bg="#020617", 
+            fg="#38bdf8", 
             font=("Consolas", 10), 
             insertbackground="white",
             relief="flat",
@@ -378,10 +426,10 @@ class AutomationGUI:
     # ================= TAB 2: SENDING INVITE =================
     def build_send_invite_tab(self):
         main_frame = ttk.Frame(self.tab_send_invite)
-        main_frame.pack(fill="both", expand=True, padx=12, pady=12)
+        main_frame.pack(fill="both", expand=True, padx=4, pady=4)
 
         # Card 1: Page Range & Excel Source
-        page_card = ttk.Frame(main_frame, style="WhiteClayCard.TFrame")
+        page_card = ttk.Frame(main_frame, style="SaaSCard.TFrame")
         page_card.pack(fill="x", pady=4)
 
         ttk.Label(page_card, text="Target Excel Source", style="Header.TLabel").grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 2))
@@ -403,7 +451,7 @@ class AutomationGUI:
         entry_custom_excel = ttk.Entry(page_card, textvariable=self.custom_excel_var, width=24)
         entry_custom_excel.grid(row=3, column=2, columnspan=2, sticky="w", padx=6, pady=4)
 
-        self.lbl_send_file = ttk.Label(page_card, text="", style="Sub.TLabel", foreground="#7c3aed")
+        self.lbl_send_file = ttk.Label(page_card, text="", style="Sub.TLabel", foreground="#4f46e5")
         self.lbl_send_file.grid(row=4, column=0, columnspan=4, sticky="w", padx=6, pady=4)
         self.update_send_filename_label()
 
@@ -412,13 +460,13 @@ class AutomationGUI:
         self.custom_excel_var.trace_add("write", lambda *args: self.update_send_filename_label())
 
         # Card 2: Contact Form Details & Message Payload
-        form_card = ttk.Frame(main_frame, style="WhiteClayCard.TFrame")
+        form_card = ttk.Frame(main_frame, style="SaaSCard.TFrame")
         form_card.pack(fill="x", pady=4)
 
         ttk.Label(form_card, text="Contact Details & Message Payload", style="Header.TLabel").pack(anchor="w", pady=(0, 2))
         ttk.Label(form_card, text="Fill out recipient details and save for future runs.", style="Sub.TLabel").pack(anchor="w", pady=(0, 6))
 
-        # Horizontal Body Container (Left: Contact Details, Right: Message Body)
+        # Horizontal Body Container
         body_frame = ttk.Frame(form_card, style="CardInner.TFrame")
         body_frame.pack(fill="x", expand=True, pady=4)
 
@@ -461,7 +509,7 @@ class AutomationGUI:
         self.combo_rel.set(self.settings.get("relationship", "Prospective Customer"))
         self.combo_rel.grid(row=3, column=1, sticky="w", padx=4, pady=3)
 
-        # RIGHT SIDE: Message Body Textarea (Takes up all remaining space on the right)
+        # RIGHT SIDE: Message Body Textarea (3D Sunken Box)
         right_frame = ttk.Frame(body_frame, style="CardInner.TFrame")
         right_frame.pack(side="left", fill="both", expand=True)
 
@@ -470,49 +518,58 @@ class AutomationGUI:
             right_frame, 
             height=7, 
             bg=self.c_input_bg, 
-            fg=self.c_fg_dark, 
+            fg=self.c_fg_primary, 
             font=("DejaVu Sans", 9), 
             insertbackground="black",
-            relief="flat",
-            bd=0
+            relief="sunken",
+            bd=2
         )
         self.txt_msg.insert("1.0", self.settings.get("message", ""))
         self.txt_msg.pack(fill="both", expand=True)
 
-        # Action Buttons (Clay Pills)
+        # Action Buttons
         btn_bar = ttk.Frame(form_card, style="CardInner.TFrame")
         btn_bar.pack(fill="x", pady=(10, 0))
 
-        ttk.Button(btn_bar, text="Save Details", style="DarkVioletClay.TButton", command=lambda: self.save_settings(show_alert=True)).pack(side="left", padx=(0, 5))
+        ttk.Button(btn_bar, text="Save Details", style="Emerald.TButton", command=lambda: self.save_settings(show_alert=True)).pack(side="left", padx=(0, 6))
         
-        self.btn_send_start = ttk.Button(btn_bar, text="Send Invites", style="PurpleClay.TButton", command=self.start_send_invites)
-        self.btn_send_start.pack(side="left", padx=5)
+        self.btn_send_start = ttk.Button(btn_bar, text="Send Invites", style="Indigo.TButton", command=self.start_send_invites)
+        self.btn_send_start.pack(side="left", padx=6)
 
-        self.btn_send_stop = ttk.Button(btn_bar, text="Stop", style="RoseClay.TButton", command=self.stop_task, state="disabled")
-        self.btn_send_stop.pack(side="left", padx=5)
+        self.btn_send_stop = ttk.Button(btn_bar, text="Stop Process", style="Rose.TButton", command=self.stop_task, state="disabled")
+        self.btn_send_stop.pack(side="left", padx=6)
 
-        ttk.Button(btn_bar, text="Clear Log", command=lambda: self.clear_log(self.log_send_invite)).pack(side="left", padx=5)
+        ttk.Button(btn_bar, text="Clear Log", style="Slate.TButton", command=lambda: self.clear_log(self.log_send_invite)).pack(side="left", padx=6)
 
         # Progress bar
-        self.progress_send = ttk.Progressbar(main_frame, mode="indeterminate")
+        self.progress_send = ttk.Progressbar(main_frame, mode="indeterminate", style="Horizontal.TProgressbar")
         self.progress_send.pack(fill="x", pady=4)
 
-        # --- BOTTOM: LOG CONSOLE SPANNING FULL WIDTH ---
-        log_frame = ttk.Frame(main_frame)
-        log_frame.pack(fill="both", expand=True, pady=4)
+        # --- LOG CONSOLE SPANNING FULL WIDTH ---
+        log_card = tk.Frame(main_frame, bg="#0f172a", relief="sunken", bd=3)
+        log_card.pack(fill="both", expand=True, pady=4)
 
-        ttk.Label(log_frame, text="Live Invites Automation Terminal Log:").pack(anchor="w", pady=(0, 3))
+        term_bar = tk.Frame(log_card, bg="#1e293b", padx=10, pady=5)
+        term_bar.pack(fill="x")
         
+        dots_frame = tk.Frame(term_bar, bg="#1e293b")
+        dots_frame.pack(side="left")
+        tk.Label(dots_frame, text="●", fg="#ef4444", bg="#1e293b", font=("DejaVu Sans", 10)).pack(side="left", padx=2)
+        tk.Label(dots_frame, text="●", fg="#f59e0b", bg="#1e293b", font=("DejaVu Sans", 10)).pack(side="left", padx=2)
+        tk.Label(dots_frame, text="●", fg="#10b981", bg="#1e293b", font=("DejaVu Sans", 10)).pack(side="left", padx=2)
+
+        tk.Label(term_bar, text="LIVE INVITES AUTOMATION LOG", bg="#1e293b", fg="#94a3b8", font=("DejaVu Sans", 8, "bold")).pack(side="left", padx=10)
+
         self.log_send_invite = ScrolledText(
-            log_frame, 
-            bg="#1e1b4b", 
-            fg="#f8fafc", 
+            log_card, 
+            bg="#020617", 
+            fg="#22c55e", 
             font=("Consolas", 10), 
             insertbackground="white",
             relief="flat",
             bd=0
         )
-        self.log_send_invite.pack(fill="both", expand=True, pady=3)
+        self.log_send_invite.pack(fill="both", expand=True)
 
     def update_send_filename_label(self):
         custom = self.custom_excel_var.get().strip()
