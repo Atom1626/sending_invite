@@ -87,27 +87,40 @@ def run_get_links(from_page=158, to_page=159, log_func=print, stop_event=None, a
                     )
                     accept_button.click()
                     log_func("Successfully clicked 'I accept all cookies'.")
+                    # Give SAP page 2 seconds to initiate cookie reload if needed
+                    time.sleep(2)
                 except Exception:
                     log_func(
                         "Cookie banner not found or already accepted. Continuing..."
                     )
 
-            # Wait for content cards to load
-            log_func("Waiting for profile cards to load...")
-            time.sleep(4)
-
             if stop_event and stop_event.is_set():
                 log_func("[CANCELLED] Process stopped by user.")
                 break
 
-            # Locate profile cards using specific container XPath
+            # Smart dynamic wait for profile cards to load (supports slow internet & cookie reload)
+            log_func("Waiting for profile cards to load...")
+            cards = []
+            max_wait_seconds = 25
+            start_time = time.time()
             xpath_query = '//*[@id="app"]/main/div/div/div[2]//udex-tile[contains(@class, "pf-card-tile") or contains(@accessible-name, "Profile Card")]'
-            cards = driver.find_elements(By.XPATH, xpath_query)
 
-            # Fallback if specific XPath didn't return cards
-            if not cards:
-                log_func("Trying fallback XPath to locate profile tiles...")
-                cards = driver.find_elements(By.TAG_NAME, "udex-tile")
+            while (time.time() - start_time) < max_wait_seconds:
+                if stop_event and stop_event.is_set():
+                    break
+                try:
+                    found_cards = driver.find_elements(By.XPATH, xpath_query)
+                    if not found_cards:
+                        found_cards = driver.find_elements(By.TAG_NAME, "udex-tile")
+
+                    # Check if valid cards with attributes are populated
+                    valid_cards = [c for c in found_cards if (c.get_attribute("accessible-name") or c.get_attribute("href"))]
+                    if valid_cards:
+                        cards = valid_cards
+                        break
+                except Exception:
+                    pass
+                time.sleep(1.5)
 
             log_func(f"Found {len(cards)} profile cards on page {page_num}.")
 
